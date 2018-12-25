@@ -1,7 +1,7 @@
 <template>
   <div>
     <router-view/>
-    <FooterGuide/>
+    <FooterGuide v-show="$route.meta.showFooter"/>
   </div>
 </template>
 <script>
@@ -9,6 +9,7 @@
   export default {
     mounted(){
       this.$store.dispatch('getAddress');
+      this.$store.dispatch('getUserInfo')
     },
     components:{
       FooterGuide,

@@ -12,12 +12,12 @@
         <form>
           <div :class="{on:LoginWif}">
             <section class="login_message">
-              <input type="tel" maxlength="11" placeholder="手机号" v-model="Phone">
-              <button :disabled="!isRightPhone || timercom>0" class="get_verification" :class="{right_phone_number:isRightPhone}" @click.prevent="sendCod">
+              <input type="tel" maxlength="11" placeholder="手机号" v-model="phone">
+              <button :disabled="!isRightphone || timercom>0" class="get_verification" :class="{right_phone_number:isRightphone}" @click.prevent="sendCod">
                 {{timercom>0 ? `已发送${timercom}`: '获取验证码'}}</button>
             </section>
             <section class="login_verification">
-              <input type="tel" maxlength="8" placeholder="验证码">
+              <input type="tel" maxlength="8" placeholder="验证码" v-model="code">
             </section>
             <section class="login_hint">
               温馨提示：未注册硅谷外卖帐号的手机号，登录时将自动注册，且代表已同意
@@ -27,22 +27,22 @@
           <div :class="{on:!LoginWif}">
             <section>
               <section class="login_message">
-                <input type="tel" maxlength="11" placeholder="手机/邮箱/用户名">
+                <input type="tel" maxlength="11" placeholder="用户名" v-model="name">
               </section>
               <section class="login_verification">
-                <input :type="isPassWord ? 'text' : 'password'" maxlength="8" placeholder="密码">
+                <input :type="isPassWord ? 'text' : 'password'" maxlength="8" placeholder="密码" v-model="pwd">
                 <div class="switch_button" :class="isPassWord ? 'on':'off'" @click="isPassWord = !isPassWord">
                   <div class="switch_circle" :class="{right:isPassWord}"></div>
                   <span class="switch_text">{{isPassWord? '显示密码':''}}</span>
                 </div>
               </section>
               <section class="login_message">
-                <input type="text" maxlength="11" placeholder="验证码">
-                <img class="get_verification" src="./images/captcha.svg" alt="captcha">
+                <input type="text" maxlength="11" placeholder="验证码" v-model="captcha">
+                <img ref="captcha" class="get_verification" src="http://localhost:5000/captcha" alt="captcha" @click="updateCaptcha">
               </section>
             </section>
           </div>
-          <button class="login_submit">登录</button>
+          <button class="login_submit" @click.prevent="GoLogin">登录</button>
         </form>
         <a href="javascript:;" class="about_us">关于我们</a>
       </div>
@@ -53,29 +53,87 @@
   </section>
 </template>
 <script>
+  import {reqSendCode,reqSmslogin,reqPwdLogin} from '../../api/index'
+  import {MessageBox,Toast} from  'mint-ui'
   export default {
       data(){
         return{
-          LoginWif:true,
-          Phone:'',
-          timercom:0,
-          isPassWord:false
+          LoginWif:false, //短信登录//密码登录
+          phone:'',   //手机号码
+          timercom:0, //倒计时事件
+          isPassWord:false,  //密码是否显示
+          code:'',  //短信验证码
+          pwd:'', //密码
+          captcha:'' , //图片验证码
+          name:''  //用户名
         }
       },
       computed:{
-        isRightPhone(){
-          return /^1\d{10}$/.test(this.Phone)
+        isRightphone(){
+          return /^1\d{10}$/.test(this.phone)
         }
       },
       methods:{
-        sendCod(){
+      async sendCod(){
          this.timercom = 30;
          let IntervalID = setInterval(()=>{
             this.timercom--;
             if(this.timercom <= 0){
+              this.timercom = 0
               clearInterval(IntervalID)
             }
           },1000)
+          //发送ajax请求发送验证码
+         const result = await reqSendCode(this.phone);
+         if(result.code === 0){  //短信发送成功
+           Toast('短信已发送')
+         }else {
+           this.timercom = 0
+           Toast('发送失败请重试');
+
+         }
+        },
+        //更新显示验证码
+        updateCaptcha(){
+          //给指定img指定src携带事件戳参数
+          this.$refs.captcha.src = 'http://localhost:5000/captcha?time='+ Date.now()
+        },
+        //登录
+       async GoLogin(){
+
+          let aresult;
+              const {name,captcha,pwd,code,phone,LoginWif} = this
+          if(LoginWif){
+            //loginwif 为true为短信登录
+            if(!this.isRightphone){ //手机号输入错误
+              return MessageBox.alert('必须输入正确的手机号')
+            }else if (!/^\d{6}/.test(code)){
+              return MessageBox.alert('必须输入6位验证码')
+            }
+            aresult = await reqSmslogin({phone,code})
+          }else {
+            //为图片验证码登录
+            if(!name.trim()){
+              return MessageBox.alert('用户名不能为空')
+            }else if(!pwd.length){
+              return MessageBox.alert('密码不能为空')
+            }else if(captcha.length !== 4){
+              return MessageBox.alert('验证码要输入四位')
+            }
+            //发送登录请求
+            aresult = await reqPwdLogin({name,pwd,captcha});
+          }
+          //根结果做出不同响应
+          if(aresult.code === 0){
+
+            const user = aresult.data;
+            //调用方法将user存储到state中
+            this.$store.dispatch('Saveuser',user)
+            this.$router.replace('/profile')
+          }else {
+            Toast(aresult.msg)
+          }
+
         }
       }
   }
