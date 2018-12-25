@@ -20,5 +20,13 @@ export const reqSmslogin = ({phone,code})=> ajax(BASE +'/login_sms',{phone,code}
 // [9、根据会话获取用户信息](#9根据会话获取用户信息)<br/>
 export const reqGetUserInfo =() =>ajax(BASE +'/userinfo')
 // [10、用户登出](#10用户登出)<br/>
-export const reqLoginout =() =>ajax(BASE +'//logout')
+export const reqLoginout =() =>ajax(BASE +'/logout')
+
+//请求点餐信息
+export const reqGoods =()=>ajax('/goods');
+export const reqInfo =()=>ajax('/info');
+export const reqPating =()=>ajax('/pating');
+
+//请求商家信息
+//请求评价信息
 

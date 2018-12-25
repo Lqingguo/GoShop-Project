@@ -20,7 +20,8 @@
   export default {
     components:{
       ShopHeader
-    }
+    },
+
   }
 </script>
 <style lang="stylus" rel="stylesheet/stylus">

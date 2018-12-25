@@ -6,7 +6,8 @@
         <i class="iconfont icon-sousuo"></i>
       </span>
       <span class="header_login" slot="right">
-        <span class="header_login_text" >登录|注册</span>
+        <span class="header_login_text" v-if="!user._id" >登录|注册</span>
+        <i class="iconfont icon-person" v-else @click="$router.push('/userinfo')"></i>
       </span>
     </HeaderTop>
     <!--首页导航-->
@@ -38,7 +39,11 @@
   import 'swiper/dist/css/swiper.min.css'
   export default {
     computed:{
-      ...mapState(['address','categorys']),
+      ...mapState({
+        address:state=>state.msite.address,
+        categorys:state=>state.msite.categorys,
+        user:state=>state.user.user
+      }),
       cateGorysArr(){
         let bigArr =[];
         let smallArr = [];
